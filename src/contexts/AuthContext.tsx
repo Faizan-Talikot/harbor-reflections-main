@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { API_ENDPOINTS } from '../config/api';
 
 interface User {
   id: string;
@@ -67,7 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const verifyToken = async (tokenToVerify: string) => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/me', {
+      const response = await fetch(API_ENDPOINTS.auth.me, {
         headers: {
           'Authorization': `Bearer ${tokenToVerify}`,
           'Content-Type': 'application/json',
@@ -105,7 +106,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     // Optionally call backend logout endpoint
     if (token) {
-      fetch('http://localhost:5000/api/auth/logout', {
+      fetch(API_ENDPOINTS.auth.logout, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

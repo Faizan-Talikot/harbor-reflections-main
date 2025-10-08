@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { API_ENDPOINTS } from "@/config/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -54,7 +55,7 @@ const Dashboard = () => {
   const fetchCheckInHistory = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/checkins/history', {
+      const response = await fetch(API_ENDPOINTS.checkins.history, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -75,7 +76,7 @@ const Dashboard = () => {
   const fetchUserStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/stats', {
+      const response = await fetch(API_ENDPOINTS.auth.stats, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

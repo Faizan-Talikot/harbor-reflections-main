@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { API_ENDPOINTS } from "@/config/api";
 
 type FormData = {
   age: string;
@@ -119,7 +120,7 @@ const CheckIn = () => {
       };
 
       // Submit to backend API
-      const response = await fetch('http://localhost:5000/api/checkins', {
+      const response = await fetch(API_ENDPOINTS.checkins.create, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
