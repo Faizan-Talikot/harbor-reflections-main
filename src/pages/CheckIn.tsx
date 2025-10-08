@@ -24,10 +24,19 @@ type FormData = {
   aiTrustLevel: string;
 };
 
+type MLPrediction = {
+  prediction: number;
+  riskLevel: string;
+  confidenceScore: number;
+  recommendations: string[];
+  urgentCareNeeded: boolean;
+};
+
 const CheckIn = () => {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [mlPrediction, setMlPrediction] = useState<MLPrediction | null>(null);
   const [formData, setFormData] = useState<FormData>({
     age: "",
     gender: "",
@@ -76,27 +85,72 @@ const CheckIn = () => {
 
   const handleSubmit = async () => {
     setIsLoading(true);
-    // Simulate API call - replace with actual backend call
-    setTimeout(() => {
-      setResult("At Risk (Thoughts)");
+    
+    try {
+      // Prepare the data for backend submission
+      const submitData = {
+        demographics: {
+          age: formData.age,
+          gender: formData.gender,
+          academicStatus: formData.academicStatus
+        },
+        lifeCircumstances: {
+          stressLevel: formData.stressLevel,
+          academicPerformance: formData.academicPerformance,
+          healthCondition: formData.healthCondition,
+          relationshipStatus: formData.relationshipStatus,
+          familyProblems: formData.familyProblems
+        },
+        mentalHealth: {
+          depressionLevel: formData.depressionLevel,
+          anxietyLevel: formData.anxietyLevel,
+          socialSupport: formData.socialSupport
+        },
+        riskAssessment: {
+          selfHarmBehaviors: formData.selfHarmBehaviors,
+          suicidalThoughts: formData.suicidalThoughts,
+          mentalHealthHelp: formData.mentalHealthHelp
+        },
+        aiRelated: {
+          aiComfortLevel: formData.aiComfortLevel,
+          aiConcerns: formData.aiConcerns,
+          aiTrustLevel: formData.aiTrustLevel
+        }
+      };
+
+      // Submit to backend API
+      const response = await fetch('http://localhost:5000/api/checkins', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add Authorization header if user is logged in
+          // ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify(submitData)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setResult(data.data.checkIn.assessment.riskLevel);
+        // Store ML prediction results
+        if (data.data.mlPrediction) {
+          setMlPrediction(data.data.mlPrediction);
+        }
+      } else {
+        // Handle error
+        console.error('Assessment submission failed:', data.message);
+        setResult("Error occurred. Please try again.");
+      }
+    } catch (error) {
+      console.error('Error submitting assessment:', error);
+      setResult("Connection error. Please check your internet and try again.");
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
-  interface SelectCardProps {
-    label: string;
-    value: string;
-    field: keyof FormData;
-  }
-
-  interface ScaleCardProps {
-    number: number;
-    field: keyof FormData;
-    leftLabel: string;
-    rightLabel: string;
-  }
-
-  const SelectCard = ({ label, value, field }: SelectCardProps) => (
+  const SelectCard = ({ label, value, field }: { label: string; value: string; field: keyof FormData }) => (
     <Card
       onClick={() => handleSelect(field, value)}
       className={`p-4 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 ${
@@ -109,7 +163,7 @@ const CheckIn = () => {
     </Card>
   );
 
-  const RadioCard = ({ label, value, field }: SelectCardProps) => (
+  const RadioCard = ({ label, value, field }: { label: string; value: string; field: keyof FormData }) => (
     <Card
       onClick={() => handleSelect(field, value)}
       className={`p-4 cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 flex items-center gap-3 ${
@@ -127,7 +181,7 @@ const CheckIn = () => {
     </Card>
   );
 
-  const CheckboxCard = ({ label, value, field }: SelectCardProps) => {
+  const CheckboxCard = ({ label, value, field }: { label: string; value: string; field: keyof FormData }) => {
     const isSelected = field === 'aiConcerns' && (formData.aiConcerns as string[]).includes(value);
     return (
       <Card
@@ -146,7 +200,12 @@ const CheckIn = () => {
     );
   };
 
-  const ScaleCard = ({ number, field, leftLabel, rightLabel }: ScaleCardProps) => (
+  const ScaleCard = ({ number, field, leftLabel, rightLabel }: { 
+    number: number; 
+    field: keyof FormData; 
+    leftLabel: string; 
+    rightLabel: string; 
+  }) => (
     <div className="text-center">
       <div className="flex justify-between text-sm text-muted-foreground mb-2">
         <span>{leftLabel}</span>
@@ -173,26 +232,107 @@ const CheckIn = () => {
   if (result) {
     return (
       <div className="min-h-screen py-12">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <Card className="p-8 md:p-12 text-center animate-fade-in">
-            <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-4">
-              Thank You for Sharing
-            </h2>
-            <p className="text-lg text-muted-foreground mb-8">Here is a Gentle Reflection</p>
-
-            <div className="p-6 rounded-lg bg-accent/20 border-2 border-accent mb-8">
-              <p className="text-2xl font-heading font-semibold text-foreground">{result}</p>
+        <div className="container mx-auto px-4 max-w-4xl">
+          <Card className="p-8 md:p-12 animate-fade-in">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-4">
+                Thank You for Sharing
+              </h2>
+              <p className="text-lg text-muted-foreground">Here are your personalized insights</p>
             </div>
 
-            <div className="text-left space-y-4 mb-8">
+            {/* ML Risk Assessment Results */}
+            {mlPrediction && (
+              <div className="mb-8">
+                <div className={`p-6 rounded-lg border-2 mb-6 ${
+                  mlPrediction.urgentCareNeeded 
+                    ? 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800'
+                    : mlPrediction.prediction === 1
+                    ? 'bg-yellow-50 border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-800'
+                    : 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800'
+                }`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-heading font-bold text-foreground">Risk Assessment</h3>
+                    <div className="text-right">
+                      <p className="text-lg font-semibold">{mlPrediction.riskLevel}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Confidence: {(mlPrediction.confidenceScore * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {mlPrediction.urgentCareNeeded && (
+                    <div className="mb-4 p-4 bg-red-100 dark:bg-red-950/40 rounded-lg">
+                      <p className="font-semibold text-red-800 dark:text-red-200 mb-2">
+                        🚨 Immediate Attention Recommended
+                      </p>
+                      <p className="text-red-700 dark:text-red-300 text-sm">
+                        Please reach out to a mental health professional or crisis support immediately.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Personalized Recommendations */}
+                <div className="bg-card rounded-lg p-6 border mb-6">
+                  <h3 className="text-xl font-heading font-bold text-foreground mb-4">
+                    Personalized Recommendations
+                  </h3>
+                  <div className="space-y-3">
+                    {mlPrediction.recommendations.map((recommendation, index) => (
+                      <div className="flex items-start gap-3 p-3 bg-accent/10 rounded-lg">
+                        <span className="text-accent font-semibold text-sm">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        <p className="text-sm text-muted-foreground flex-1">
+                          {recommendation}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Traditional Assessment Result */}
+            <div className="p-6 rounded-lg bg-accent/20 border-2 border-accent mb-8">
+              <h3 className="text-lg font-semibold text-foreground mb-2">Clinical Assessment</h3>
+              <p className="text-xl font-heading font-semibold text-foreground">{result}</p>
+            </div>
+
+            {/* Crisis Resources */}
+            {mlPrediction?.urgentCareNeeded && (
+              <div className="mb-8 p-6 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                <h3 className="text-lg font-bold text-red-800 dark:text-red-200 mb-4">
+                  Immediate Support Resources
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <p className="font-semibold text-red-700 dark:text-red-300">Crisis Text Line</p>
+                    <p className="text-red-600 dark:text-red-400">Text HOME to 741741</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-semibold text-red-700 dark:text-red-300">National Suicide Prevention</p>
+                    <p className="text-red-600 dark:text-red-400">Call 988</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="text-center space-y-4 mb-8">
               <h3 className="text-2xl font-heading font-bold text-foreground">Your Next Steps</h3>
               <p className="text-muted-foreground">
                 Remember, this reflection is just a starting point. Professional support can make all the difference.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
-              <Button variant="default" className="w-full" asChild>
+            <div className="grid md:grid-cols-3 gap-4 mb-6">
+              <Button 
+                variant={mlPrediction?.urgentCareNeeded ? "default" : "outline"} 
+                className="w-full" 
+                asChild
+              >
                 <a href="/resources">Find a Helpline</a>
               </Button>
               <Button variant="outline" className="w-full" asChild>
@@ -200,6 +340,39 @@ const CheckIn = () => {
               </Button>
               <Button variant="outline" className="w-full" asChild>
                 <a href="/compass">Read about Self-Care</a>
+              </Button>
+            </div>
+
+            {/* New Assessment Button */}
+            <div className="text-center">
+              <Button 
+                variant="ghost" 
+                onClick={() => {
+                  setResult(null);
+                  setMlPrediction(null);
+                  setStep(1);
+                  setFormData({
+                    age: "",
+                    gender: "",
+                    academicStatus: "",
+                    stressLevel: "",
+                    academicPerformance: "",
+                    healthCondition: "",
+                    relationshipStatus: "",
+                    familyProblems: "",
+                    depressionLevel: "",
+                    anxietyLevel: "",
+                    socialSupport: "",
+                    selfHarmBehaviors: "",
+                    suicidalThoughts: "",
+                    mentalHealthHelp: "",
+                    aiComfortLevel: "",
+                    aiConcerns: [],
+                    aiTrustLevel: ""
+                  });
+                }}
+              >
+                Take Another Assessment
               </Button>
             </div>
           </Card>
@@ -235,7 +408,7 @@ const CheckIn = () => {
                 <label className="block text-sm font-medium text-foreground mb-3">Age <span className="text-red-500">*</span></label>
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
                   {Array.from({ length: 12 }, (_, i) => (16 + i).toString()).map((age) => (
-                    <SelectCard key={age} label={age} value={age} field="age" />
+                    <SelectCard label={age} value={age} field="age" />
                   ))}
                 </div>
               </div>
@@ -244,7 +417,7 @@ const CheckIn = () => {
                 <label className="block text-sm font-medium text-foreground mb-3">Gender <span className="text-red-500">*</span></label>
                 <div className="grid grid-cols-1 gap-3">
                   {["male", "female", "other"].map((gender) => (
-                    <RadioCard key={gender} label={gender} value={gender} field="gender" />
+                    <RadioCard label={gender} value={gender} field="gender" />
                   ))}
                 </div>
               </div>
@@ -253,7 +426,7 @@ const CheckIn = () => {
                 <label className="block text-sm font-medium text-foreground mb-3">Academic Status <span className="text-red-500">*</span></label>
                 <div className="grid grid-cols-1 gap-3">
                   {["Undergraduate", "PostGraduate", "other"].map((status) => (
-                    <RadioCard key={status} label={status} value={status} field="academicStatus" />
+                    <RadioCard label={status} value={status} field="academicStatus" />
                   ))}
                 </div>
               </div>

@@ -75,7 +75,10 @@ const corsOptions = {
       process.env.CORS_ORIGIN || 'http://localhost:8080',
       'http://localhost:3000',
       'http://localhost:5173',
-      'http://localhost:8080'
+      'http://localhost:8080',
+      // Render frontend URLs (will be updated after deployment)
+      'https://harbor-reflections-frontend.onrender.com',
+      /\.onrender\.com$/  // Allow any Render subdomain
     ];
     
     if (allowedOrigins.indexOf(origin) !== -1) {

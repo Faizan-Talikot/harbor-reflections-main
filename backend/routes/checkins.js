@@ -3,8 +3,62 @@ import { protect, optionalAuth } from '../middleware/auth.js';
 import { validateCheckIn } from '../middleware/validation.js';
 import { asyncHandler } from '../middleware/error.js';
 import CheckIn from '../models/CheckIn.js';
+import axios from 'axios';
 
 const router = express.Router();
+
+// Transform backend CheckIn data to ML API format
+const transformToMLFormat = (checkInData) => {
+  const { demographics, lifeCircumstances, mentalHealth, riskAssessment, aiRelated } = checkInData;
+
+  return {
+    age: demographics.age,
+    gender: demographics.gender,
+    academicStatus: lifeCircumstances.academicStatus,
+    stressLevel: lifeCircumstances.stressLevel,
+    academicPerformance: lifeCircumstances.academicPerformance,
+    healthCondition: lifeCircumstances.healthCondition,
+    relationshipStatus: lifeCircumstances.relationshipStatus,
+    familyProblems: lifeCircumstances.familyProblems,
+    depressionLevel: mentalHealth.depressionLevel,
+    anxietyLevel: mentalHealth.anxietyLevel,
+    socialSupport: mentalHealth.socialSupport,
+    selfHarmBehaviors: riskAssessment.selfHarmBehaviors,
+    suicidalThoughts: riskAssessment.suicidalThoughts,
+    mentalHealthHelp: riskAssessment.mentalHealthHelp,
+    aiComfortLevel: aiRelated.aiComfortLevel,
+    aiConcerns: aiRelated.aiConcerns,
+    aiTrustLevel: aiRelated.aiTrustLevel
+  };
+};
+
+// Call ML API for risk prediction
+const getMLPrediction = async (formData) => {
+  try {
+    const mlApiUrl = process.env.ML_API_URL || 'http://localhost:8000';
+    const response = await axios.post(`${mlApiUrl}/predict`, formData, {
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('ML API Error:', error.response?.data || error.message);
+    // Return fallback prediction if ML service is unavailable
+    return {
+      prediction: 0,
+      risk_level: "Assessment Unavailable",
+      confidence_score: 0,
+      recommendations: [
+        "Our risk assessment service is temporarily unavailable",
+        "Please reach out to a mental health professional if you're in crisis",
+        "Contact National Suicide Prevention Lifeline: 988"
+      ],
+      urgent_care_needed: false
+    };
+  }
+};
 
 // @desc    Submit check-in assessment
 // @route   POST /api/checkins
@@ -35,6 +89,10 @@ router.post('/', optionalAuth, validateCheckIn, asyncHandler(async (req, res) =>
     checkInData.user = req.user.id;
   }
 
+  // Get ML risk prediction
+  const mlFormat = transformToMLFormat(req.body);
+  const mlPrediction = await getMLPrediction(mlFormat);
+
   // Create check-in (assessment will be calculated automatically via pre-save middleware)
   const checkIn = await CheckIn.create(checkInData);
 
@@ -44,12 +102,14 @@ router.post('/', optionalAuth, validateCheckIn, asyncHandler(async (req, res) =>
     .select('assessment completedAt user');
 
   // If this is a high-risk assessment, log it for immediate attention
-  if (checkIn.assessment.riskLevel === 'Crisis' || checkIn.assessment.riskLevel === 'High Risk') {
+  if (checkIn.assessment.riskLevel === 'Crisis' || checkIn.assessment.riskLevel === 'High Risk' || mlPrediction.urgent_care_needed) {
     console.warn(`HIGH RISK ASSESSMENT SUBMITTED:`, {
       checkInId: checkIn._id,
       userId: req.user?.id || 'anonymous',
       riskLevel: checkIn.assessment.riskLevel,
       score: checkIn.assessment.score,
+      mlRiskLevel: mlPrediction.risk_level,
+      mlConfidence: mlPrediction.confidence_score,
       timestamp: checkIn.completedAt
     });
   }
@@ -63,6 +123,13 @@ router.post('/', optionalAuth, validateCheckIn, asyncHandler(async (req, res) =>
         assessment: populatedCheckIn.assessment,
         completedAt: populatedCheckIn.completedAt,
         user: populatedCheckIn.user || null
+      },
+      mlPrediction: {
+        prediction: mlPrediction.prediction,
+        riskLevel: mlPrediction.risk_level,
+        confidenceScore: mlPrediction.confidence_score,
+        recommendations: mlPrediction.recommendations,
+        urgentCareNeeded: mlPrediction.urgent_care_needed
       }
     }
   });
