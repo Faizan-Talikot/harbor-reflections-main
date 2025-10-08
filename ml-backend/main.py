@@ -15,9 +15,22 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Harbor Reflections ML API", version="1.0.0")
 
 # Configure CORS
+allowed_origins = [
+    "http://localhost:3000", 
+    "http://localhost:5173", 
+    "http://localhost:5000",
+    "https://harbor-reflections-backend.onrender.com",
+    "https://harbor-reflections-ml.onrender.com"  # Will be the ML service URL
+]
+
+# Add any additional origins from environment variable
+if os.getenv("ADDITIONAL_CORS_ORIGINS"):
+    additional_origins = os.getenv("ADDITIONAL_CORS_ORIGINS").split(",")
+    allowed_origins.extend([origin.strip() for origin in additional_origins])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:5000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -251,6 +264,21 @@ def get_recommendations(prediction: int, confidence: float, data: CheckInData) -
 async def startup_event():
     """Load the model when the server starts"""
     load_model()
+
+@app.get("/")
+async def root():
+    """Root endpoint with API information"""
+    return {
+        "message": "Harbor Reflections ML API",
+        "version": "1.0.0",
+        "status": "running",
+        "endpoints": {
+            "health": "/health",
+            "predict": "/predict",
+            "model_info": "/model-info"
+        },
+        "model_loaded": model is not None
+    }
 
 @app.get("/health")
 async def health_check():
