@@ -116,7 +116,7 @@ const CheckInSchema = new mongoose.Schema({
     riskLevel: {
       type: String,
       enum: ['Low Risk', 'Moderate Risk', 'At Risk (Thoughts)', 'High Risk', 'Crisis'],
-      required: true
+      default: 'Low Risk'  // Default value, will be recalculated by pre-validate middleware
     },
     score: {
       type: Number,
@@ -168,11 +168,17 @@ CheckInSchema.index({ 'assessment.riskLevel': 1 });
 CheckInSchema.index({ completedAt: -1 });
 
 // Pre-save middleware to calculate assessment
-CheckInSchema.pre('save', function(next) {
-  if (this.isNew || this.isModified()) {
-    this.assessment = calculateAssessment(this);
+CheckInSchema.pre('validate', function(next) {
+  try {
+    console.log('Pre-validate: Calculating assessment for check-in');
+    const calculatedAssessment = calculateAssessment(this);
+    this.assessment = calculatedAssessment;
+    console.log('Assessment calculated:', calculatedAssessment);
+    next();
+  } catch (error) {
+    console.error('Error calculating assessment:', error);
+    next(error);
   }
-  next();
 });
 
 // Static method to get user's check-in history
