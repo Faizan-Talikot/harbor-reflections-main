@@ -120,12 +120,12 @@ const CheckIn = () => {
       };
 
       // Submit to backend API
+      const token = localStorage.getItem('token');
       const response = await fetch(API_ENDPOINTS.checkins.create, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add Authorization header if user is logged in
-          // ...(token && { 'Authorization': `Bearer ${token}` })
+          ...(token && { 'Authorization': `Bearer ${token}` })
         },
         body: JSON.stringify(submitData)
       });

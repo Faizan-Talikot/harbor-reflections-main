@@ -4,7 +4,7 @@ const CheckInSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false  // Allow anonymous check-ins
   },
   
   // Demographics (Step 1)
