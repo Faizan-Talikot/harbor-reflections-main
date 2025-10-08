@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Project Safe Harbor Design System */
+
+@layer base {
+  :root {
+    /* Light Mode - Calming & Airy */
+    --background: 33 46% 97%; /* Creamy off-white #FCF8F3 */
+    --foreground: 230 11% 25%; /* Soft charcoal #3D405B */
+
+    --card: 33 46% 97%;
+    --card-foreground: 230 11% 25%;
+
+    --popover: 33 46% 97%;
+    --popover-foreground: 230 11% 25%;
+
+    /* Muted Teal #81B29A */
+    --primary: 152 27% 60%;
+    --primary-foreground: 33 46% 97%;
+
+    /* Gentle Peach #F2CC8F */
+    --secondary: 42 73% 75%;
+    --secondary-foreground: 230 11% 25%;
+
+    /* Soft Lavender #B2B2D6 */
+    --accent: 240 38% 77%;
+    --accent-foreground: 230 11% 25%;
+
+    --muted: 33 30% 92%;
+    --muted-foreground: 230 11% 45%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 33 46% 97%;
+
+    --border: 33 30% 88%;
+    --input: 33 30% 88%;
+    --ring: 152 27% 60%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 33 46% 97%;
+    --sidebar-foreground: 230 11% 25%;
+    --sidebar-primary: 152 27% 60%;
+    --sidebar-primary-foreground: 33 46% 97%;
+    --sidebar-accent: 33 30% 92%;
+    --sidebar-accent-foreground: 230 11% 25%;
+    --sidebar-border: 33 30% 88%;
+    --sidebar-ring: 152 27% 60%;
+  }
+
+  .dark {
+    /* Dark Mode - Cozy & Safe */
+    --background: 221 43% 11%; /* Deep warm navy #1B263B */
+    --foreground: 60 5% 88%; /* Soft light grey #E0E1DD */
+
+    --card: 221 43% 11%;
+    --card-foreground: 60 5% 88%;
+
+    --popover: 221 43% 11%;
+    --popover-foreground: 60 5% 88%;
+
+    /* Glowing Mint #A4E5D9 */
+    --primary: 167 56% 77%;
+    --primary-foreground: 221 43% 11%;
+
+    /* Soft Lavender for dark */
+    --secondary: 240 38% 77%;
+    --secondary-foreground: 221 43% 11%;
+
+    --accent: 167 56% 77%;
+    --accent-foreground: 221 43% 11%;
+
+    --muted: 221 30% 18%;
+    --muted-foreground: 60 5% 70%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 60 5% 88%;
+
+    --border: 221 30% 18%;
+    --input: 221 30% 18%;
+    --ring: 167 56% 77%;
+
+    --sidebar-background: 221 43% 11%;
+    --sidebar-foreground: 60 5% 88%;
+    --sidebar-primary: 167 56% 77%;
+    --sidebar-primary-foreground: 221 43% 11%;
+    --sidebar-accent: 221 30% 18%;
+    --sidebar-accent-foreground: 60 5% 88%;
+    --sidebar-border: 221 30% 18%;
+    --sidebar-ring: 167 56% 77%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
