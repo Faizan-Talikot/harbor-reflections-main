@@ -71,19 +71,40 @@ def load_model():
     global model, model_columns
     
     try:
+        # Print versions for debugging
+        import sklearn
+        logger.info(f"scikit-learn version: {sklearn.__version__}")
+        logger.info(f"numpy version: {np.__version__}")
+        logger.info(f"pandas version: {pd.__version__}")
+        
         # Load the model
         model_path = os.path.join(os.path.dirname(__file__), "suicide_risk_model.pkl")
+        logger.info(f"Loading model from: {model_path}")
+        
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Model file not found: {model_path}")
+            
         model = joblib.load(model_path)
         logger.info("Model loaded successfully")
         
         # Load the model columns
         columns_path = os.path.join(os.path.dirname(__file__), "model_columns.pkl")
+        logger.info(f"Loading columns from: {columns_path}")
+        
+        if not os.path.exists(columns_path):
+            raise FileNotFoundError(f"Columns file not found: {columns_path}")
+            
         model_columns = joblib.load(columns_path)
         logger.info(f"Model columns loaded: {len(model_columns)} features")
         
     except Exception as e:
         logger.error(f"Error loading model: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to load model: {str(e)}")
+        logger.error(f"Current working directory: {os.getcwd()}")
+        logger.error(f"Files in current directory: {os.listdir('.')}")
+        # Don't raise HTTPException during startup as it causes issues
+        # Just log the error and set model to None
+        model = None
+        model_columns = None
 
 def preprocess_data(data: CheckInData) -> pd.DataFrame:
     """
